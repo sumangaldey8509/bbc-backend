@@ -11,7 +11,7 @@ const config = {
     port: parseInt(process.env.SMTP_PORT, 10) || 587,
     user: process.env.SMTP_USER || '',
     pass: process.env.SMTP_PASS || '',
-    from: process.env.EMAIL_FROM || 'Curated Table <noreply@curatedtable.com>',
+    from: process.env.EMAIL_FROM || 'BBC - Bengal Business Council <noreply@bengalbusinesscouncil.com>',
   },
   jwt: {
     secret: process.env.JWT_SECRET || 'default_jwt_secret_change_me_in_prod',
@@ -26,7 +26,7 @@ const config = {
     apiKey: process.env.CLOUDINARY_API_KEY || '',
     apiSecret: process.env.CLOUDINARY_API_SECRET || '',
     // Base/project folder. Per-user uploads land in `<folder>/users/<user-slug>`.
-    folder: process.env.CLOUDINARY_FOLDER || 'curated_table',
+    folder: process.env.CLOUDINARY_FOLDER || 'bbc',
   },
   supabase: {
     url: process.env.SUPABASE_URL || '',

@@ -38,8 +38,8 @@ const createAndSendOTP = async ({ email, type = 'email_verification', firstName 
 
   const subject =
     type === 'forgot_password'
-      ? 'Password Reset OTP - Curated Table'
-      : 'Verify Your Email - Curated Table';
+      ? 'Password Reset OTP - BBC - Bengal Business Council'
+      : 'Verify Your Email - BBC - Bengal Business Council';
 
   const title =
     type === 'forgot_password'
@@ -48,7 +48,7 @@ const createAndSendOTP = async ({ email, type = 'email_verification', firstName 
 
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 500px; margin: auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
-      <h2 style="color: #1a202c; text-align: center; margin-bottom: 8px;">Curated Table</h2>
+      <h2 style="color: #1a202c; text-align: center; margin-bottom: 8px;">BBC - Bengal Business Council</h2>
       <h3 style="color: #2d3748; text-align: center; margin-top: 0;">${title}</h3>
       <p style="color: #4a5568; font-size: 15px;">Hello <strong>${firstName}</strong>,</p>
       <p style="color: #4a5568; font-size: 15px;">Your 6-digit verification code is:</p>

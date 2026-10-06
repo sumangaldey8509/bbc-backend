@@ -1,7 +1,7 @@
 {
-  "name": "curated-table-be",
+  "name": "bbc-backend",
   "version": "1.0.0",
-  "description": "Node.js Express backend with MongoDB and Socket.io support",
+  "description": "BBC - Bengal Business Council Backend API by Credovation Solutions Pvt Ltd",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",

@@ -39,7 +39,7 @@ const hydratePostData = async (posts, currentUserId = null) => {
     const user = userMap.get(authorIdStr);
     const profile = profileMap.get(authorIdStr);
 
-    const authorName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Curated Member';
+    const authorName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Council Member';
     const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(authorName)}&background=0D1B2A&color=fff&bold=true`;
     const authorAvatar = profile?.avatar || defaultAvatar;
     const authorDesignation = profile?.designation || 'Executive Member';
@@ -299,7 +299,7 @@ const addComment = async (postId, authorId, text, parentCommentId = null) => {
     ProfileDetails.findOne({ userId: authorId }).select('avatar designation companyName').lean(),
   ]);
 
-  const authorName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Curated Member';
+  const authorName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Council Member';
   const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(authorName)}&background=0D1B2A&color=fff&bold=true`;
   const authorAvatar = profile?.avatar || defaultAvatar;
   const authorDesignation = profile?.designation || 'Executive Member';
@@ -359,7 +359,7 @@ const getPostComments = async (postId, { page = 1, limit = 50 } = {}) => {
     const user = userMap.get(authorIdStr);
     const profile = profileMap.get(authorIdStr);
 
-    const authorName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Curated Member';
+    const authorName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Council Member';
     const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(authorName)}&background=0D1B2A&color=fff&bold=true`;
     const authorAvatar = profile?.avatar || defaultAvatar;
     const authorDesignation = profile?.designation || 'Executive Member';
@@ -482,7 +482,7 @@ const updateComment = async (postId, commentId, userId, text, isAdmin = false) =
     ProfileDetails.findOne({ userId: comment.author }).select('avatar designation companyName').lean(),
   ]);
 
-  const authorName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Curated Member';
+  const authorName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Council Member';
   const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(authorName)}&background=0D1B2A&color=fff&bold=true`;
   const authorAvatar = profile?.avatar || defaultAvatar;
   const authorDesignation = profile?.designation || 'Executive Member';

@@ -1,11 +1,11 @@
-# Curated Table - Backend API
+# BBC - Bengal Business Council - Backend API
 
-A clean, modular, and simple Node.js + Express backend with MongoDB (Mongoose), Nodemailer, and Socket.io.
+A clean, modular, and simple Node.js + Express backend with MongoDB (Mongoose), Nodemailer, and Socket.io for Bengal Business Council by Credovation Solutions Pvt Ltd.
 
 ## Project Structure
 
 ```
-curated-table-be/
+bbc-backend/
 ├── .env                  # Environment configuration
 ├── .env.example          # Environment template
 ├── .gitignore            # Git ignored files
@@ -116,7 +116,7 @@ All Indian states/UTs, each with its own city catalogue. The profile "Location" 
 
 ### Uploads (`/api/uploads`) — requires `Authorization: Bearer <token>`
 - `POST /api/uploads` - `multipart/form-data`, field `file`, optional `kind` (`avatar` | `cover` | `document`). Streams to Cloudinary and returns `{ url, publicId, resourceType, bytes, width, height, format }`. Returns `503` until `CLOUDINARY_*` env vars are set. Max 10 MB.
-  - All of a member's files go into one folder: `<CLOUDINARY_FOLDER>/users/<firstname_lastname>` (e.g. `curated_table/users/sumangal_dey`).
+  - All of a member's files go into one folder: `<CLOUDINARY_FOLDER>/users/<firstname_lastname>` (e.g. `bbc/users/sumangal_dey`).
   - `avatar` / `cover` use fixed public ids (`avatar`, `cover`) so re-uploading replaces the old one; `document` keeps every version.
   - Images are compressed, dimension-capped, and **normalised to JPG** (`.../avatar.jpg`) so `<Image>` loads them on every platform; the member crops client-side before upload.
 

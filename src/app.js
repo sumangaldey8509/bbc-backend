@@ -25,7 +25,7 @@ app.use('/api', routes);
 // Root route
 app.get('/', (req, res) => {
   res.json({
-    message: 'Welcome to Curated Table API',
+    message: 'Welcome to BBC - Bengal Business Council API',
     docs: '/api/health',
   });
 });

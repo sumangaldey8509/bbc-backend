@@ -114,7 +114,7 @@ const initialRoles = [
   },
   {
     name: 'member',
-    description: 'Curated Table Member with table booking and community access',
+    description: 'Bengal Business Council Member with access to chapters and business desk',
     permissions: ['view_tables', 'book_tables', 'manage_profile'],
     isActive: true,
   },
@@ -133,7 +133,7 @@ const initialUsers = [
   {
     firstName: 'System',
     lastName: 'Admin',
-    email: 'admin@curatedtable.com',
+    email: 'admin@bengalbusinesscouncil.com',
     password: 'Admin@123',
     countryCode: '+91',
     phoneNumber: '9876543210',
@@ -145,7 +145,7 @@ const initialUsers = [
   {
     firstName: 'John',
     lastName: 'Doe',
-    email: 'john.doe@curatedtable.com',
+    email: 'john.doe@bengalbusinesscouncil.com',
     password: 'Member@123',
     countryCode: '+91',
     phoneNumber: '9876543211',
