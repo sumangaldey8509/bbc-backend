@@ -8,6 +8,7 @@ const uploadRoutes = require('./upload.routes');
 const industryRoutes = require('./industry.routes');
 const locationRoutes = require('./location.routes');
 const postRoutes = require('./post.routes');
+const notificationRoutes = require('./notification.routes');
 const { sendSuccess } = require('../helpers/response.helper');
 
 // Health check endpoint
@@ -28,5 +29,6 @@ router.use('/uploads', uploadRoutes);
 router.use('/industries', industryRoutes);
 router.use('/states', locationRoutes);
 router.use('/posts', postRoutes);
+router.use('/notifications', notificationRoutes);
 
 module.exports = router;

@@ -4,6 +4,7 @@ const User = require('../models/user.model');
 const ProfileDetails = require('../models/profileDetails.model');
 const mongoose = require('mongoose');
 const { broadcastFeedEvent } = require('./realtime.service');
+const notificationService = require('./notification.service');
 
 /**
  * Extract hashtag tokens from post content text (e.g., "#HVAC #Manufacturing").
@@ -241,6 +242,30 @@ const toggleLikePost = async (postId, userId) => {
     isLiked: !alreadyLiked,
   });
 
+  // Notify post author if newly liked by another user
+  if (!alreadyLiked && String(post.author) !== String(userId)) {
+    (async () => {
+      try {
+        const senderUser = await User.findById(userId).select('firstName lastName').lean();
+        const senderName = senderUser
+          ? `${senderUser.firstName || ''} ${senderUser.lastName || ''}`.trim()
+          : 'A council member';
+        const postSnippet = post.content ? (post.content.length > 50 ? post.content.substring(0, 50) + '...' : post.content) : 'your post';
+
+        await notificationService.createNotification({
+          recipientId: post.author,
+          senderId: userId,
+          type: 'like',
+          title: 'New Like on your post',
+          message: `${senderName} liked "${postSnippet}"`,
+          postId: post._id,
+        });
+      } catch (err) {
+        console.warn('[notification] Failed to create like notification:', err.message);
+      }
+    })();
+  }
+
   return {
     postId: String(postId),
     isLiked: !alreadyLiked,
@@ -272,6 +297,7 @@ const addComment = async (postId, authorId, text, parentCommentId = null) => {
   }
 
   let validParentId = null;
+  let parentCommentDoc = null;
   if (parentCommentId) {
     if (!mongoose.Types.ObjectId.isValid(parentCommentId)) {
       const error = new Error('Invalid Parent Comment ID');
@@ -285,6 +311,7 @@ const addComment = async (postId, authorId, text, parentCommentId = null) => {
       throw error;
     }
     validParentId = parentComment._id;
+    parentCommentDoc = parentComment;
   }
 
   const comment = await PostComment.create({
@@ -329,6 +356,67 @@ const addComment = async (postId, authorId, text, parentCommentId = null) => {
   };
 
   void broadcastFeedEvent('new_comment', commentData);
+
+  // Handle comment and reply notifications
+  (async () => {
+    try {
+      const commentSnippet = text.trim().length > 50 ? text.trim().substring(0, 50) + '...' : text.trim();
+      const recipientsNotified = new Set();
+
+      // 1. If replying to a comment, notify the author of that comment
+      if (parentCommentDoc && parentCommentDoc.author) {
+        const directParentAuthorId = String(parentCommentDoc.author);
+        if (directParentAuthorId !== String(authorId)) {
+          recipientsNotified.add(directParentAuthorId);
+          await notificationService.createNotification({
+            recipientId: directParentAuthorId,
+            senderId: authorId,
+            type: 'comment',
+            title: 'New Reply to your comment',
+            message: `${authorName} replied: "${commentSnippet}"`,
+            postId: post._id,
+            commentId: comment._id,
+          });
+        }
+
+        // If parent comment was itself a child reply, also notify the root comment author
+        if (parentCommentDoc.parentCommentId) {
+          const rootComment = await PostComment.findById(parentCommentDoc.parentCommentId).lean();
+          if (rootComment && rootComment.author) {
+            const rootAuthorId = String(rootComment.author);
+            if (rootAuthorId !== String(authorId) && !recipientsNotified.has(rootAuthorId)) {
+              recipientsNotified.add(rootAuthorId);
+              await notificationService.createNotification({
+                recipientId: rootAuthorId,
+                senderId: authorId,
+                type: 'comment',
+                title: 'New Reply in your thread',
+                message: `${authorName} replied: "${commentSnippet}"`,
+                postId: post._id,
+                commentId: comment._id,
+              });
+            }
+          }
+        }
+      }
+
+      // 2. Notify post author (if not the commenter and not already notified as comment author)
+      const postAuthorId = String(post.author);
+      if (postAuthorId !== String(authorId) && !recipientsNotified.has(postAuthorId)) {
+        await notificationService.createNotification({
+          recipientId: postAuthorId,
+          senderId: authorId,
+          type: 'comment',
+          title: parentCommentDoc ? 'New Reply on your post' : 'New Comment on your post',
+          message: `${authorName} commented: "${commentSnippet}"`,
+          postId: post._id,
+          commentId: comment._id,
+        });
+      }
+    } catch (err) {
+      console.warn('[notification] Failed to create comment/reply notification:', err.message);
+    }
+  })();
 
   return commentData;
 };
