@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const routes = require('./routes');
+const connectDB = require('./config/db');
 const { sendError } = require('./helpers/response.helper');
 const logger = require('./utils/logger');
 
@@ -18,6 +19,17 @@ if (process.env.NODE_ENV === 'development') {
     next();
   });
 }
+
+// Database connection middleware for Serverless (Vercel) and traditional deployments
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    logger.error(`Database Connection Failed on request to ${req.originalUrl}: ${err.message}`);
+    return sendError(res, `Database unavailable: ${err.message}`, 503);
+  }
+});
 
 // API Routes
 app.use('/api', routes);
