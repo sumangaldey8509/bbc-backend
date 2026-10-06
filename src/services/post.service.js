@@ -233,6 +233,14 @@ const toggleLikePost = async (postId, userId) => {
     await Post.findByIdAndUpdate(postId, { likesCount: cleanCount });
   }
 
+  // Broadcast realtime like count update over Supabase channel
+  void broadcastFeedEvent('post_like', {
+    postId: String(postId),
+    likesCount: cleanCount,
+    userId: String(userId),
+    isLiked: !alreadyLiked,
+  });
+
   return {
     postId: String(postId),
     isLiked: !alreadyLiked,
