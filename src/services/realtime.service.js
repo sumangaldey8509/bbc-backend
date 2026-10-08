@@ -87,9 +87,27 @@ const broadcastFeedEvent = async (event, payload) => {
   }
 };
 
+/**
+ * Send a content-free invalidation event to a user's private message channel.
+ * The client then fetches authorized content from MongoDB through the REST API.
+ */
+const broadcastPrivateMessageChanged = async (userId) => {
+  const client = initSupabase();
+  if (!client) return;
+  const topic = `user:${String(userId)}:messages`;
+  const channel = client.channel(topic, { config: { private: true } });
+  try {
+    await channel.httpSend('changed', {});
+  } catch (err) {
+    logger.error(`[Supabase Realtime] Private message signal failed: ${err.message}`);
+  } finally {
+    await client.removeChannel(channel);
+  }
+};
+
 module.exports = {
   initSupabase,
   initRealtime,
   broadcastFeedEvent,
+  broadcastPrivateMessageChanged,
 };
-

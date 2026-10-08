@@ -9,6 +9,7 @@ const industryRoutes = require('./industry.routes');
 const locationRoutes = require('./location.routes');
 const postRoutes = require('./post.routes');
 const notificationRoutes = require('./notification.routes');
+const messageRoutes = require('./message.routes');
 const { sendSuccess } = require('../helpers/response.helper');
 
 // Health check endpoint
@@ -30,5 +31,6 @@ router.use('/industries', industryRoutes);
 router.use('/states', locationRoutes);
 router.use('/posts', postRoutes);
 router.use('/notifications', notificationRoutes);
+router.use('/messages', messageRoutes);
 
 module.exports = router;
