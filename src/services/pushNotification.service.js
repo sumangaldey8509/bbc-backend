@@ -1,14 +1,26 @@
-const { Expo } = require('expo-server-sdk');
 const PushToken = require('../models/pushToken.model');
 const logger = require('../utils/logger');
 
-const expo = new Expo(
-  process.env.EXPO_PUSH_ACCESS_TOKEN
-    ? { accessToken: process.env.EXPO_PUSH_ACCESS_TOKEN }
-    : undefined
-);
+let expoClientPromise;
+
+const getExpoClient = async () => {
+  if (!expoClientPromise) {
+    expoClientPromise = import('expo-server-sdk').then(({ Expo }) => ({
+      Expo,
+      client: new Expo(
+        process.env.EXPO_PUSH_ACCESS_TOKEN
+          ? { accessToken: process.env.EXPO_PUSH_ACCESS_TOKEN }
+          : undefined
+      ),
+    }));
+  }
+
+  return expoClientPromise;
+};
 
 const registerToken = async (userId, { token, platform, deviceName = '' }) => {
+  const { Expo } = await getExpoClient();
+
   if (!Expo.isExpoPushToken(token)) {
     const error = new Error('Invalid Expo push token.');
     error.statusCode = 400;
@@ -46,6 +58,8 @@ const unregisterToken = async (userId, token) => {
 };
 
 const sendToUser = async (userId, { title, body, data = {} }) => {
+  const { Expo, client: expo } = await getExpoClient();
+
   const records = await PushToken.find({ user: userId, platform: 'android', active: true }).lean();
   const validRecords = records.filter((record) => Expo.isExpoPushToken(record.token));
   if (!validRecords.length) return { queued: 0 };
