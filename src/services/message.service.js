@@ -6,6 +6,7 @@ const Message = require('../models/message.model');
 const User = require('../models/user.model');
 const ProfileDetails = require('../models/profileDetails.model');
 const { broadcastPrivateMessageChanged } = require('./realtime.service');
+const { sendToUser } = require('./pushNotification.service');
 
 const httpError = (message, statusCode) => Object.assign(new Error(message), { statusCode });
 
@@ -182,6 +183,21 @@ const sendMessage = async (threadId, userId, text) => {
   thread.participants.forEach((participantId) => {
     void broadcastPrivateMessageChanged(participantId);
   });
+  const recipientId = thread.participants.find((participantId) => String(participantId) !== String(userId));
+  if (recipientId) {
+    void getMemberCards([userId]).then((members) => {
+      const sender = members.get(String(userId));
+      return sendToUser(recipientId, {
+        title: sender?.name || 'New BBC message',
+        body: message.text,
+        data: {
+          type: 'message',
+          threadId: String(thread._id),
+          senderId: String(userId),
+        },
+      });
+    }).catch(() => {});
+  }
   return serializeMessage(message, userId);
 };
 

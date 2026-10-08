@@ -1,4 +1,5 @@
 const notificationService = require('../services/notification.service');
+const pushNotificationService = require('../services/pushNotification.service');
 const { sendSuccess, sendError } = require('../helpers/response.helper');
 
 /**
@@ -74,9 +75,29 @@ const clearNotifications = async (req, res) => {
   }
 };
 
+const registerPushToken = async (req, res) => {
+  try {
+    const result = await pushNotificationService.registerToken(req.user._id, req.body);
+    return sendSuccess(res, result, 'Push notification device registered.');
+  } catch (error) {
+    return sendError(res, error.message, error.statusCode || 500, error);
+  }
+};
+
+const unregisterPushToken = async (req, res) => {
+  try {
+    const result = await pushNotificationService.unregisterToken(req.user._id, req.body.token);
+    return sendSuccess(res, result, 'Push notification device removed.');
+  } catch (error) {
+    return sendError(res, error.message, error.statusCode || 500, error);
+  }
+};
+
 module.exports = {
   getNotifications,
   markNotificationRead,
   markAllRead,
   clearNotifications,
+  registerPushToken,
+  unregisterPushToken,
 };

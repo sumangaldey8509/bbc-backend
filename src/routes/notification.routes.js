@@ -7,6 +7,8 @@ const { authenticate } = require('../middlewares/auth.middleware');
 router.use(authenticate);
 
 router.get('/', notificationController.getNotifications);
+router.post('/push-token', notificationController.registerPushToken);
+router.delete('/push-token', notificationController.unregisterPushToken);
 router.patch('/read-all', notificationController.markAllRead);
 router.patch('/:id/read', notificationController.markNotificationRead);
 router.delete('/', notificationController.clearNotifications);
