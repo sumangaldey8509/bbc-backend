@@ -32,10 +32,11 @@ const serializeMessage = (message, userId) => {
   };
 };
 
-const notifyUsers = (userIds) => {
-  [...new Set(userIds.map(String))].forEach((userId) => {
-    void broadcastPrivateMessageChanged(userId);
-  });
+const notifyUsers = async (userIds) => {
+  const uniqueUserIds = [...new Set(userIds.map(String))];
+  await Promise.allSettled(
+    uniqueUserIds.map((userId) => broadcastPrivateMessageChanged(userId))
+  );
 };
 
 const createRealtimeToken = (userId) => {
@@ -180,14 +181,13 @@ const sendMessage = async (threadId, userId, text) => {
   if (ownRead) ownRead.lastReadAt = createdAt;
   else thread.readState.push({ user: userId, lastReadAt: createdAt });
   await thread.save();
-  thread.participants.forEach((participantId) => {
-    void broadcastPrivateMessageChanged(participantId);
-  });
+  await notifyUsers(thread.participants);
   const recipientId = thread.participants.find((participantId) => String(participantId) !== String(userId));
   if (recipientId) {
-    void getMemberCards([userId]).then((members) => {
+    try {
+      const members = await getMemberCards([userId]);
       const sender = members.get(String(userId));
-      return sendToUser(recipientId, {
+      await sendToUser(recipientId, {
         title: sender?.name || 'New BBC message',
         body: message.text,
         data: {
@@ -196,7 +196,9 @@ const sendMessage = async (threadId, userId, text) => {
           senderId: String(userId),
         },
       });
-    }).catch(() => {});
+    } catch (_) {
+      // Message delivery must not fail if the optional push notification cannot be sent.
+    }
   }
   return serializeMessage(message, userId);
 };
@@ -220,7 +222,7 @@ const markMessagesDelivered = async (userId) => {
     { _id: { $in: pending.map((message) => message._id) }, deliveredAt: null },
     { $set: { deliveredAt } }
   );
-  notifyUsers(pending.map((message) => message.sender));
+  await notifyUsers(pending.map((message) => message.sender));
   return { deliveredCount: result.modifiedCount, deliveredAt };
 };
 
@@ -243,7 +245,7 @@ const markThreadRead = async (threadId, userId) => {
   if (entry) entry.lastReadAt = seenAt;
   else thread.readState.push({ user: userId, lastReadAt: seenAt });
   await thread.save();
-  if (unseen.length) notifyUsers(unseen.map((message) => message.sender));
+  if (unseen.length) await notifyUsers(unseen.map((message) => message.sender));
   return { threadId: String(thread._id), unreadCount: 0, seenCount: unseen.length, seenAt };
 };
 
