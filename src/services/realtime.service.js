@@ -58,30 +58,46 @@ const initRealtime = () => {
 };
 
 /**
+ * Ensure the broadcast channel is ready before sending events.
+ */
+const ensureSubscribed = async () => {
+  const client = initSupabase();
+  if (!client) return null;
+  if (!feedChannel) initRealtime();
+  if (!feedChannel) return null;
+  if (isSubscribed) return feedChannel;
+
+  return new Promise((resolve) => {
+    let elapsed = 0;
+    const interval = setInterval(() => {
+      elapsed += 50;
+      if (isSubscribed || elapsed >= 1500) {
+        clearInterval(interval);
+        resolve(feedChannel);
+      }
+    }, 50);
+  });
+};
+
+/**
  * Broadcast an event over the Supabase Realtime feed channel.
- * @param {string} event - Event name (e.g., 'new_post', 'update_post', 'delete_post')
- * @param {object} payload - Post data payload
+ * @param {string} event - Event name (e.g., 'new_post', 'new_message', 'message_read')
+ * @param {object} payload - Event data payload
  */
 const broadcastFeedEvent = async (event, payload) => {
   try {
-    const client = initSupabase();
-    if (!client) {
+    const channel = await ensureSubscribed();
+    if (!channel) {
       logger.warn('[Supabase Realtime] Supabase not configured. Skipping broadcast.');
       return;
     }
 
-    if (!feedChannel) {
-      initRealtime();
-    }
-
-    if (feedChannel) {
-      const resp = await feedChannel.send({
-        type: 'broadcast',
-        event,
-        payload,
-      });
-      logger.info(`[Supabase Realtime] Broadcasted "${event}" event (result: ${resp})`);
-    }
+    const resp = await channel.send({
+      type: 'broadcast',
+      event,
+      payload,
+    });
+    logger.info(`[Supabase Realtime] Broadcasted "${event}" event (result: ${resp})`);
   } catch (err) {
     logger.error(`[Supabase Realtime] Error broadcasting "${event}": ${err.message}`);
   }

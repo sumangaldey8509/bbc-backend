@@ -5,7 +5,7 @@ const Conversation = require('../models/conversation.model');
 const Message = require('../models/message.model');
 const User = require('../models/user.model');
 const ProfileDetails = require('../models/profileDetails.model');
-const { broadcastPrivateMessageChanged } = require('./realtime.service');
+const { broadcastFeedEvent, broadcastPrivateMessageChanged } = require('./realtime.service');
 const { sendToUser } = require('./pushNotification.service');
 
 const httpError = (message, statusCode) => Object.assign(new Error(message), { statusCode });
@@ -183,6 +183,27 @@ const sendMessage = async (threadId, userId, text) => {
   await thread.save();
   await notifyUsers(thread.participants);
   const recipientId = thread.participants.find((participantId) => String(participantId) !== String(userId));
+
+  // Broadcast realtime new_message event over Supabase
+  void broadcastFeedEvent('new_message', {
+    threadId: String(thread._id),
+    senderId: String(userId),
+    recipientId: recipientId ? String(recipientId) : null,
+    participants: thread.participants.map(String),
+    message: {
+      id: String(message._id),
+      threadId: String(thread._id),
+      senderId: String(userId),
+      text: message.text,
+      createdAt: message.createdAt,
+      deliveredAt: message.deliveredAt || null,
+      seenAt: message.seenAt || null,
+      receiptStatus: 'sent',
+    },
+    lastMessage: message.text,
+    lastMessageAt: createdAt,
+  });
+
   if (recipientId) {
     try {
       const members = await getMemberCards([userId]);
@@ -223,6 +244,12 @@ const markMessagesDelivered = async (userId) => {
     { $set: { deliveredAt } }
   );
   await notifyUsers(pending.map((message) => message.sender));
+
+  void broadcastFeedEvent('messages_delivered', {
+    recipientId: String(userId),
+    deliveredAt,
+  });
+
   return { deliveredCount: result.modifiedCount, deliveredAt };
 };
 
@@ -246,6 +273,14 @@ const markThreadRead = async (threadId, userId) => {
   else thread.readState.push({ user: userId, lastReadAt: seenAt });
   await thread.save();
   if (unseen.length) await notifyUsers(unseen.map((message) => message.sender));
+
+  void broadcastFeedEvent('message_read', {
+    threadId: String(thread._id),
+    readerId: String(userId),
+    participants: thread.participants.map(String),
+    seenAt,
+  });
+
   return { threadId: String(thread._id), unreadCount: 0, seenCount: unseen.length, seenAt };
 };
 
