@@ -18,6 +18,10 @@ const roleSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    modules: {
+      type: [String],
+      default: ['feed', 'profile'],
+    },
     isActive: {
       type: Boolean,
       default: true,

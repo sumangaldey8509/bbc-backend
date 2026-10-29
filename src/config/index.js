@@ -5,7 +5,7 @@ dotenv.config();
 const config = {
   port: process.env.PORT || 5001,
   nodeEnv: process.env.NODE_ENV || 'development',
-  mongoUri: process.env.MONGO_URI,
+  mongoUri: process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017/bengal_business_council',
   email: {
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: parseInt(process.env.SMTP_PORT, 10) || 587,

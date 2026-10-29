@@ -13,6 +13,8 @@ const authenticate = async (req, res, next) => {
 
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
       token = req.headers.authorization.split(' ')[1];
+    } else if (req.cookies && req.cookies.bbc) {
+      token = req.cookies.bbc;
     }
 
     if (!token) {
@@ -57,6 +59,8 @@ const optionalAuthenticate = async (req, res, next) => {
     let token = null;
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
       token = req.headers.authorization.split(' ')[1];
+    } else if (req.cookies && req.cookies.bbc) {
+      token = req.cookies.bbc;
     }
 
     if (!token) {
@@ -83,21 +87,72 @@ const optionalAuthenticate = async (req, res, next) => {
   }
 };
 
+const ADMIN_MODULES = [
+  'dashboard',
+  'members',
+  'treasury',
+  'events',
+  'aboutus',
+  'access',
+  'approvals',
+  'reports',
+  'settings',
+];
+
+const MODULES = [...ADMIN_MODULES, 'feed', 'profile'];
+
 /**
  * Authorization middleware — requires the authenticated user to hold the `admin`
  * role. Must run after `authenticate`.
  */
 const requireAdmin = (req, res, next) => {
   const roles = (req.user && req.user.roles) || [];
-  const isAdmin = roles.some((role) => (role && role.name ? role.name : role) === 'admin');
+  const isAdmin = roles.some((role) => (role && role.name ? role.name : role) === 'admin') || req.user?.role === 'admin';
   if (!isAdmin) {
     return sendError(res, 'Administrator access is required for this action.', 403);
   }
   next();
 };
 
+/**
+ * Module permission authorization middleware.
+ * If user is admin, all modules permitted. Otherwise checks role's assigned modules.
+ */
+const requireModule = (mod) => {
+  return async (req, res, next) => {
+    if (!req.user) {
+      return sendError(res, 'Authentication required.', 401);
+    }
+    const roles = (req.user.roles || []).map((role) => (role && role.name ? role.name : role));
+    const isAdmin = roles.includes('admin') || req.user.role === 'admin';
+    if (isAdmin) {
+      return next();
+    }
+
+    try {
+      const Role = require('../models/role.model');
+      const roleDocs = await Role.find({ name: { $in: roles } });
+      const allowedModules = new Set(['feed', 'profile']);
+      roleDocs.forEach((r) => {
+        (r.modules || []).forEach((m) => allowedModules.add(m));
+      });
+
+      if (mod && !allowedModules.has(mod)) {
+        return sendError(res, `Forbidden: insufficient permissions for module "${mod}".`, 403);
+      }
+      next();
+    } catch (e) {
+      return sendError(res, 'Permission check failed.', 500, e);
+    }
+  };
+};
+
 module.exports = {
   authenticate,
   optionalAuthenticate,
   requireAdmin,
+  requireModule,
+  ADMIN_MODULES,
+  MODULES,
 };
+

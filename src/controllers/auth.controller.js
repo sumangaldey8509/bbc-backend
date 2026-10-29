@@ -1,5 +1,7 @@
 const authService = require('../services/auth.service');
 const { sendSuccess, sendError } = require('../helpers/response.helper');
+const { MODULES } = require('../middlewares/auth.middleware');
+const Role = require('../models/role.model');
 const {
   validateLogin,
   validateVerifyOtp,
@@ -7,6 +9,35 @@ const {
   validateResetPassword,
   validateCompleteVerification,
 } = require('../utils/validator');
+
+const getUserWithModules = async (userDoc) => {
+  const user = userDoc.toJSON ? userDoc.toJSON() : { ...userDoc };
+  const roleNames = (user.roles || []).map((r) => (r && r.name ? r.name : String(r)));
+  const isAdmin = roleNames.includes('admin') || user.role === 'admin';
+  const role = isAdmin ? 'admin' : roleNames[0] || 'member';
+
+  let modules = ['feed', 'profile'];
+  if (isAdmin) {
+    modules = MODULES;
+  } else {
+    const roleDocs = await Role.find({ name: { $in: roleNames } });
+    const set = new Set(['feed', 'profile']);
+    roleDocs.forEach((r) => {
+      (r.modules || []).forEach((m) => set.add(m));
+    });
+    modules = Array.from(set);
+  }
+
+  const name = user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User';
+
+  return {
+    ...user,
+    id: String(user._id || user.id),
+    name,
+    role,
+    modules,
+  };
+};
 
 /**
  * Login with Email OR Phone Number + Password
@@ -26,7 +57,26 @@ const login = async (req, res) => {
       password,
     });
 
-    return sendSuccess(res, result, 'Login successful.');
+    const userWithModules = await getUserWithModules(result.user);
+
+    // Set HTTP-Only session cookie for Web CRM
+    res.cookie('bbc', result.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
+    return sendSuccess(
+      res,
+      {
+        token: result.token,
+        user: userWithModules,
+        ...userWithModules,
+      },
+      'Login successful.'
+    );
   } catch (error) {
     if (error.code === 'EMAIL_NOT_VERIFIED') {
       return res.status(403).json({
@@ -178,7 +228,7 @@ const resetPassword = async (req, res) => {
  * Logout
  */
 const logout = async (req, res) => {
-  // With stateless JWT, client deletes token; server confirms logout
+  res.clearCookie('bbc', { path: '/' });
   return sendSuccess(res, null, 'Logged out successfully.');
 };
 
@@ -187,8 +237,15 @@ const logout = async (req, res) => {
  */
 const getMe = async (req, res) => {
   try {
-    // req.user populated by authenticate middleware
-    return sendSuccess(res, req.user, 'Current user profile retrieved successfully.');
+    const userWithModules = await getUserWithModules(req.user);
+    return sendSuccess(
+      res,
+      {
+        user: userWithModules,
+        ...userWithModules,
+      },
+      'Current user profile retrieved successfully.'
+    );
   } catch (error) {
     return sendError(res, 'Failed to retrieve profile.', 500, error);
   }
