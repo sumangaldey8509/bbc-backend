@@ -12,6 +12,7 @@ const locationRoutes = require('./location.routes');
 const postRoutes = require('./post.routes');
 const notificationRoutes = require('./notification.routes');
 const messageRoutes = require('./message.routes');
+const connectionRoutes = require('./connection.routes');
 
 // CRM portal resource routes
 const dashboardRoutes = require('./dashboard.routes');
@@ -49,6 +50,7 @@ router.use('/states', locationRoutes);
 router.use('/posts', postRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/messages', messageRoutes);
+router.use('/connections', connectionRoutes);
 
 // Mount CRM endpoints
 router.use('/dashboard', dashboardRoutes);

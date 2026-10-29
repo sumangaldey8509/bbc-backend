@@ -15,7 +15,16 @@ const notificationSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ['like', 'comment', 'meeting', 'referral', 'deal', 'general'],
+      enum: [
+        'like',
+        'comment',
+        'meeting',
+        'referral',
+        'deal',
+        'general',
+        'connection_request',
+        'connection_accepted',
+      ],
       required: true,
     },
     title: {
@@ -27,6 +36,11 @@ const notificationSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+    },
+    connectionId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Connection',
+      default: null,
     },
     postId: {
       type: mongoose.Schema.Types.ObjectId,

@@ -15,6 +15,7 @@ const createNotification = async ({
   message,
   postId = null,
   commentId = null,
+  connectionId = null,
 }) => {
   if (!recipientId || !senderId) return null;
 
@@ -31,6 +32,7 @@ const createNotification = async ({
     message,
     postId: postId && mongoose.Types.ObjectId.isValid(postId) ? postId : null,
     commentId: commentId && mongoose.Types.ObjectId.isValid(commentId) ? commentId : null,
+    connectionId: connectionId && mongoose.Types.ObjectId.isValid(connectionId) ? connectionId : null,
     read: false,
   });
 
@@ -59,6 +61,7 @@ const createNotification = async ({
     type: notification.type,
     postId: postId ? String(postId) : undefined,
     commentId: commentId ? String(commentId) : undefined,
+    connectionId: connectionId ? String(connectionId) : undefined,
     read: false,
     timestamp: 'Just now',
     createdAt: notification.createdAt,
@@ -116,6 +119,7 @@ const getUserNotifications = async (userId, { page = 1, limit = 20 } = {}) => {
       type: notif.type,
       postId: notif.postId ? String(notif.postId) : undefined,
       commentId: notif.commentId ? String(notif.commentId) : undefined,
+      connectionId: notif.connectionId ? String(notif.connectionId) : undefined,
       read: notif.read,
       timestamp: notif.createdAt
         ? new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
